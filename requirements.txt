@@ -1,0 +1,11 @@
+# Tested against the declared major versions; pip resolves compatible patches.
+fastapi>=0.128,<1
+uvicorn[standard]>=0.34,<1
+sqlalchemy>=2.0.40,<3
+psycopg[binary]>=3.2,<4
+pydantic[email]>=2.11,<3
+pydantic-settings>=2.8,<3
+passlib[argon2]==1.7.4
+PyJWT>=2.10,<3
+python-multipart>=0.0.20,<1
+alembic>=1.15,<2
