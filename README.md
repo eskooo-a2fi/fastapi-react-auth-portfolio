@@ -79,3 +79,17 @@ Tests use **SQLite in memory** for fast isolation; they do not prove the Postgre
 ## AI-assisted code review
 
 [`CLAUDE_CODE_REVIEW.md`](CLAUDE_CODE_REVIEW.md) contains explicit prompts to review the endpoints for correctness, abuse cases, validation and security. Changes should be approved through tests and code review—not accepted purely because an AI suggests them.
+
+## Evidence and edge cases
+
+**CV keywords demonstrated:** **Python**, **FastAPI**, **Pydantic v2**, **PostgreSQL** configuration, **SQLAlchemy 2**, **Alembic** migrations, **RESTful APIs**, **Authentication (JWT)**, **React**, **TypeScript**, **pytest**, **Git/GitHub**, **CI/CD**, and **Claude Code** review prompts.
+
+- `GET /health` is a liveness check; `GET /ready` executes a simple database query.
+- Connection errors and exhausted SQLAlchemy pools return **503 Service Unavailable**, plus `Retry-After: 5`, without exposing SQL or connection information.
+- The registration endpoint keeps its **409 Conflict** branch for duplicate addresses and uses a database unique constraint as a second line of defence.
+- An inaccessible database does not make the liveness endpoint fail, but it correctly fails readiness and registration.
+- `tests/test_service_outages.py` simulates an unavailable database and verifies recovery after the override is removed.
+
+Run `python -m pytest -q` and `ruff check app tests` before pushing. CI tests against SQLite; PostgreSQL fault-recovery tests in a real deployment remain follow-up work.
+
+**Not implemented:** SSO, refresh-token rotation, account recovery, rate limiting, or a production deployment. **Claude Code** is documented as a review workflow, not a claim that an autonomous agent audited or shipped this API.
