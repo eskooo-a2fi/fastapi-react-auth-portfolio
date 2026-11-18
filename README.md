@@ -1,32 +1,52 @@
-# FastAPI + React Auth Portfolio
+# AuthKit — FastAPI + React Authentication Scaffold
 
-An end-to-end, **production-minded learning scaffold** showing Python, FastAPI, Pydantic v2, PostgreSQL, SQLAlchemy 2, Alembic migrations, JWT authentication, Argon2 hashing via passlib, React and TypeScript. This is not a fully audited or deployed production identity service.
+[![API and React checks](https://github.com/eskooo-a2fi/fastapi-react-auth-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/eskooo-a2fi/fastapi-react-auth-portfolio/actions/workflows/ci.yml)
 
-## Prerequisites
-- Python 3.11+ and pip
-- Docker with Compose (or local PostgreSQL 17)
-- Node.js 20.19+ / 22.12+ and npm for the React client
+**A full-stack authentication portfolio project** built with FastAPI, Pydantic v2, SQLAlchemy 2, PostgreSQL, React and TypeScript. It demonstrates API design, password hashing, JWT validation, database constraints and repeatable tests.
 
-## Start the API
+> **Local demonstration, not a public authentication service.** The client requires a running API and PostgreSQL database. Never use real credentials in demos. This project has not undergone a production security review.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    UI[React + TypeScript] -->|JSON REST| API[FastAPI / Pydantic]
+    API --> AUTH[Argon2 + JWT checks]
+    API --> DB[(PostgreSQL / SQLAlchemy)]
+    MIG[Alembic] --> DB
+    TEST[pytest + Ruff] -.-> API
+```
+
+## Key capabilities
+
+| Area | Implementation |
+| --- | --- |
+| Registration | Validated email/password, password hashing, conflict handling and unique email constraint |
+| Login | JSON endpoint plus OAuth2 form endpoint for FastAPI's Swagger UI |
+| Protected profile | Bearer token validation checks signature, issuer, audience, expiry and active account status |
+| Persistence | SQLAlchemy 2 models, PostgreSQL connection configuration, Alembic migration |
+| Frontend | Typed React forms, loading/error states and in-memory token state |
+| Quality gates | pytest API tests, Ruff linting and client build in GitHub Actions |
+
+## Run locally
+
+Requirements: **Python 3.11+**, **Docker/Compose** (or a running PostgreSQL server), and **Node 20.19+ / 22.12+**.
 
 ```bash
-cd fastapi-react-auth-portfolio
 python -m venv .venv
-# macOS/Linux: source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
+source .venv/bin/activate       # Windows: .venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
 cp .env.example .env
-# Replace JWT_SECRET_KEY in .env with a random value: python -c "import secrets; print(secrets.token_urlsafe(48))"
+# Set JWT_SECRET_KEY in .env to a new random value:
+python -c 'import secrets; print(secrets.token_urlsafe(48))'
 docker compose up -d postgres
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The demo Postgres credentials in Compose are for **local development only**. Set a strong, different password and properly managed secrets for all non-local deployments. The API runs at <http://localhost:8000>; Swagger UI is at <http://localhost:8000/docs>.
+The generated secret is **not** automatically saved; paste it into your local `.env` file. Do not commit `.env` to GitHub. The local API docs are at <http://localhost:8000/docs>.
 
-PowerShell alternative to `cp`: `Copy-Item .env.example .env`.
-
-## Start the React client
+In another terminal:
 
 ```bash
 cd client
@@ -34,41 +54,28 @@ npm install
 npm run dev
 ```
 
-Visit <http://localhost:5173>. The browser holds the token in React memory only (it resets on reload). The API's `CORS_ORIGINS` allows this local origin. In a real system consider secure HttpOnly cookies with explicit CSRF protections and a stronger session management model.
+Open the Vite URL (normally <http://localhost:5173>). The local React client calls `http://localhost:8000` by default. With no API running, the form cannot register or log in.
 
 ## API endpoints
 
-| Endpoint | Request | Response |
+| Method | Path | Behaviour |
 | --- | --- | --- |
-| `GET /health` | none | `{"status":"ok"}` |
-| `POST /auth/register` | JSON: `email`, `password` (12–128 characters) | HTTP 201 public user |
-| `POST /auth/login` | JSON: `email`, `password` | JWT bearer token + expiry |
-| `POST /auth/token` | OAuth2 form: `username` (email), `password` | JWT for Swagger Authorize |
-| `GET /auth/me` | `Authorization: Bearer TOKEN` | public active user |
+| GET | `/health` | Health check |
+| POST | `/auth/register` | Create a user |
+| POST | `/auth/login` | Receive short-lived access token |
+| POST | `/auth/token` | OAuth2 form compatibility |
+| GET | `/auth/me` | Return authenticated user profile |
 
-Email is normalised to lowercase; passwords are hashed; the unique email index protects concurrent registrations. The token verifies signature, algorithm, issuer, audience and expiration. JWT does **not** support instant logout/revocation in this scaffold.
-
-## Tests and quality gates
+## Tests and engineering trade-offs
 
 ```bash
 python -m pytest -q
 ruff check app tests
-cd client && npm run build
+cd client && npm install && npm run build
 ```
 
-Unit tests use SQLite in memory for fast isolation. They are **not PostgreSQL integration tests**. For production, add a dedicated integration test container, migrations smoke tests, rate limiting, observability, TLS, revocation/refresh strategy, email verification, account recovery, secret rotation, abuse detection and dependency/security auditing.
+Tests use **SQLite in memory** for fast isolation; they do not prove the PostgreSQL integration or migration pathway. Tokens are stored only in React state and disappear on refresh. No revocation or refresh-token flow is implemented. Before production use, add rate limiting, security monitoring, CSRF-aware session design, email verification, recovery, Postgres integration tests, rotation/revocation, security audits and HTTPS-only deployment.
 
-## AI-assisted review
+## AI-assisted code review
 
-See [`CLAUDE_CODE_REVIEW.md`](CLAUDE_CODE_REVIEW.md) for three exact Claude Code review/test prompts and curl examples. Example review comments also appear in `app/main.py`.
-
-## Repository setup
-
-```bash
-git init
-git add .
-git commit -m "Build FastAPI PostgreSQL React auth portfolio"
-gh repo create fastapi-react-auth-portfolio --public --source=. --remote=origin --push
-```
-
-Authenticate GitHub CLI (`gh auth login`) before the final command. **Never commit `.env` or real user records.**
+[`CLAUDE_CODE_REVIEW.md`](CLAUDE_CODE_REVIEW.md) contains explicit prompts to review the endpoints for correctness, abuse cases, validation and security. Changes should be approved through tests and code review—not accepted purely because an AI suggests them.
