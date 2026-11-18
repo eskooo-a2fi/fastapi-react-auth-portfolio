@@ -1,4 +1,5 @@
 import os
+
 os.environ['JWT_SECRET_KEY'] = 'this-is-a-test-only-secret-value-with-adequate-length'
 os.environ['DATABASE_URL'] = 'sqlite+pysqlite:///:memory:'
 
@@ -7,8 +8,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
+
 from app.database import Base, get_db
 from app.main import app
+
 
 @pytest.fixture
 def client():

@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
 from .auth import create_access_token, get_current_user, hash_password, verify_password
 from .config import get_settings
 from .database import get_db
